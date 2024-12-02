@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Genetic Algorithm</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<h1 class="text-center text-2xl font-bold mt-5">Pengujian Genetic Algorithm</h1>
+
+<table class="min-w-full border-collapse border border-blue-300 mt-5">
+  <thead>
+  <tr>
+    <th class="border border-blue-300 p-2">Individu</th>
+    <th class="border border-blue-300 p-2">Gen</th>
+    <th class="border border-blue-300 p-2">Fitness</th>
+  </tr>
+  </thead>
+  <tbody id="populationTableBody">
+  </tbody>
+</table>
+
+<div class="mt-5 text-center">
+  <p id="gbestFitness" class="text-lg font-bold"></p>
+  <p id="gbestGenes" class="text-lg font-bold"></p>
+</div>
+
+<div class="text-center mt-5">
+  <button id="startButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Mulai Optimasi</button>
+</div>
+
+<div class="mt-5">
+  <canvas id="fitnessChart"></canvas>
+</div>
+
+<script type="module">
+  import { GeneticAlgorithm } from "./genetic_algorithm.js";
+  import { revenueFunction } from "./revenueFunction.js";
+
+  const startButton = document.getElementById("startButton");
+  const populationTableBody = document.getElementById("populationTableBody");
+  const gbestFitnessElement = document.getElementById("gbestFitness");
+  const gbestGenesElement = document.getElementById("gbestGenes");
+  const fitnessChartCtx = document.getElementById("fitnessChart").getContext("2d");
+
+  const populationSize = 10;
+  const maxGenerations = 50;
+  const ga = new GeneticAlgorithm(populationSize, 3, revenueFunction);
+
+  let generation = 0;
+  let gbestFitnessData = [];
+  let labels = [];
+
+  const fitnessChart = new Chart(fitnessChartCtx, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Gbest Fitness",
+        data: gbestFitnessData,
+        backgroundColor: "rgba(255, 99, 132, 0.2)",
+        borderColor: "rgba(255, 99, 132, 1)",
+        fill: true,
+        tension: 0.1,
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: "Generation"
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: "Gbest Fitness"
+          }
+        }
+      }
+    }
+  });
+
+  function updateTable() {
+    populationTableBody.innerHTML = "";
+    ga.population.forEach((individual, index) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+                    <td class="border border-blue-300 p-2">${index + 1}</td>
+                    <td class="border border-blue-300 p-2">${individual.genes}</td>
+                    <td class="border border-blue-300 p-2">${Math.round(individual.fitness)}</td>
+                `;
+      populationTableBody.appendChild(row);
+    });
+
+    gbestFitnessElement.textContent = `Gbest Fitness: ${Math.round(ga.gbestFitness)}`;
+    gbestGenesElement.textContent = `Gbest Genes: Keju: ${ga.gbestGenes[0]}, Isi: ${ga.gbestGenes[1]}, Tawar: ${ga.gbestGenes[2]}`;
+  }
+
+  function updateChart() {
+    labels.push(generation);
+    gbestFitnessData.push(Math.round(ga.gbestFitness));
+
+    fitnessChart.data.labels = labels;
+    fitnessChart.data.datasets[0].data = gbestFitnessData;
+    fitnessChart.update();
+  }
+
+  function runGA() {
+    for (generation = 1; generation <= maxGenerations; generation++) {
+      ga.mainGA(1);
+      updateTable();
+      updateChart();
+    }
+  }
+
+  window.onload = () => {
+    updateTable();
+  };
+
+
+  startButton.addEventListener("click", () => {
+    generation = 0;
+    gbestFitnessData = [];
+    labels = [];
+    runGA();
+  });
+</script>
+</body>
+</html>
